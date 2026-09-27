@@ -13,6 +13,10 @@ import express from "express";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
+import {
+  declareDiscoveryExtension,
+  bazaarResourceServerExtension,
+} from "@x402/extensions";
 import { extractUrl, ExtractionError } from "./extract.mjs";
 
 const PORT = Number(process.env.PORT) || 4021;
@@ -57,6 +61,49 @@ const resourceServer = new x402ResourceServer(facilitatorClient).register(
   NETWORK,
   new ExactEvmScheme()
 );
+// Lets the facilitator catalog this endpoint in the x402 Bazaar (discovery
+// layer) from settled payments that carry the discovery declaration below.
+resourceServer.registerExtension(bazaarResourceServerExtension);
+
+// Machine-readable listing for the x402 Bazaar — this is what AI agents
+// search when they need a URL-to-text extraction tool.
+const bazaarExtensions = declareDiscoveryExtension({
+  method: "POST",
+  bodyType: "json",
+  input: { url: "https://example.com/article" },
+  inputSchema: {
+    properties: {
+      url: {
+        type: "string",
+        description:
+          "Public URL of the page to extract clean readable text from",
+      },
+    },
+    required: ["url"],
+  },
+  output: {
+    example: {
+      title: "Example Domain",
+      text: "This domain is for use in illustrative examples in documents...",
+      chars: 120,
+      finalUrl: "https://example.com/",
+      paywallSuspected: false,
+    },
+    schema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Page title" },
+        text: { type: "string", description: "Cleaned readable body text" },
+        chars: { type: "number", description: "Character count of extracted text" },
+        finalUrl: { type: "string", description: "Final URL after redirects" },
+        paywallSuspected: {
+          type: "boolean",
+          description: "True when the page looks paywalled or gated",
+        },
+      },
+    },
+  },
+});
 
 app.use(
   paymentMiddleware(
@@ -70,8 +117,9 @@ app.use(
           maxTimeoutSeconds: 300,
         },
         description:
-          "Extract clean readable text (page title + body) from any public URL",
+          "Extract clean readable text (page title + body) from any public URL. Send JSON { url }. Built for AI agents that need page content as text.",
         mimeType: "application/json",
+        extensions: bazaarExtensions,
       },
     },
     resourceServer
