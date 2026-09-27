@@ -1,0 +1,25 @@
+{
+  "name": "@joshua/agent-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.mjs",
+    "test-client": "node test-client.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@x402/core": "^2.27.0",
+    "@x402/evm": "^2.27.0",
+    "@x402/express": "^2.27.0",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@x402/fetch": "^2.27.0",
+    "viem": "^2.56.9"
+  }
+}
